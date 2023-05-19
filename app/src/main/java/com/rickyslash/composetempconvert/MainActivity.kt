@@ -41,3 +41,144 @@ fun DefaultPreview() {
         Greeting("Android")
     }
 }
+
+// State is a component that contains value to dynamically affect UI
+// UI Update Loop: 0 -> Event -> Renew State -> Display State -> 0
+
+// Event is anything that cause a State to change
+/* example: `onValueChange`
+@Composable
+fun FormInput() {
+    var name by remember { mutableStateOf("") } //state
+    OutlinedTextField(
+        value = name, // display state
+        onValueChange = { newName -> // event
+            name = newName //update state
+        },
+        label = { Text("Name") },
+        modifier = Modifier.padding(8.dp)
+    )
+}*/
+
+// Jetpack Compose applies UDF (Unidirectional Flow) handle Events & State:
+// (State) -> State -> (UI) -> Event -> (State)
+
+// Benefits in following UDF Pattern:
+// - Testability: separating state & UI so the test between both component will be easier
+// - State Encapsulation: State chang process could only be done in 1 place, so the potential of bug could be decreased
+// - UI Consistency: State that is being made is directly reflected to UI, making it consistent both ways
+
+// `mutableStateOf` used to track a state, which has a type of 'observable' in Compose
+// `remember` used to save value to memory so the data is still available when recomposition
+// `rememberSavable` used to save state in bundle, so it save State when there is configuration change (like rotation)
+
+// 2 type of Composable Function:
+// - Stateful: save State inside it
+// --- useful when parent composable didn't have to control child composable & child composable is independent in managing its composable
+// --- it is less reusable and hard to test, because the logic inside hard to be managed
+// - Stateless: not save State inside it
+// --- more flexible. Could manage logic outside. Easier to test
+
+// to change Stateful Composable function into Stateless, we need State Hoisting
+
+// State Hoisting is a pattern to move State to parent above it (caller composable), so the Composable becoming Stateless
+// benefit in doing State Hoisting:
+// - Single Source of Truth (from the caller)
+// - Shareable: can be used to more than one composable
+// - Interceptable: caller can choose to use Event or not
+// - Decoupled: State can be separated from the Composable, like in ViewModel
+
+// to implement State Hoisting, State variable nee to be changed in 2 parameter:
+// - `value: T` (State's value)
+// - `onEvent: (T) -> Unit` (Lambda that shows occuring Events)
+/* example:
+@Composable
+fun StatefulCounter(modifier: Modifier = Modifier) {
+    var count by rememberSaveable { mutableStateOf(0) }
+    StatelessCounter(
+        count = count,
+        onClick = { count++ },
+        modifier = modifier,
+    )
+}
+
+@Composable
+fun StatelessCounter(
+    count: Int,           //state
+    onClick : () -> Unit  //event,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier.padding(16.dp)
+    ) {
+        Text("Button clicked $count times:")
+        Button(onClick = { onClick() }) {
+            Text("Click me!")
+        }
+    }
+}*/
+
+// best practice to place State of a component:
+// - place State on 'lowest level parent Composable' that 'read the State'
+// --- means to place the State variable to the parent composable that is 'closest to the child that read the state'
+/* example:
+@Composable
+fun ParentComposable() {
+    val state = remember { mutableStateOf("Hello") }
+    ChildComposable(state.value)
+}
+
+@Composable
+fun ChildComposable(stateValue: String) {
+    Text(text = stateValue)
+}
+*/
+// - place State on 'highest level parent Composable' that 'write the State'
+// --- means to place State variable to the farther up of the composition hierarchy (closest to the root)
+/* example:
+@Composable
+fun OuterComposable(stateValue: String, onStateChange: (String) -> Unit) {
+    // OuterComposable may have some other child composables
+
+    InnerComposable(stateValue, onStateChange)
+}
+
+@Composable
+fun InnerComposable(stateValue: String, onStateChange: (String) -> Unit) {
+    // InnerComposable may have some other child composables
+
+    Button(onClick = { onStateChange("New Value") }) {
+        Text(text = stateValue)
+    }
+}*/
+// - if '2 state changed by the same event', place state on the 'same level'
+/* example:
+@Composable
+fun MyScreen() {
+    // State only available in 'MyScreen'
+    var checked by remember { mutableStateOf(false) }
+    Row (
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(16.dp)
+    ){
+        MySwitch(checked = checked, onCheckChanged = {checked = it})
+        Text(
+            text = if(checked) "ON" else "OFF",
+            Modifier.clickable {
+                checked = !checked
+            }
+        )
+    }
+}
+
+// checked is Immutable (can't be changed)
+@Composable
+fun MySwitch(checked: Boolean, onCheckChanged: (Boolean) -> Unit) {
+    Switch(
+        checked = checked,
+        onCheckedChange = {
+            onCheckChanged(it)
+        }
+    )
+}*/
