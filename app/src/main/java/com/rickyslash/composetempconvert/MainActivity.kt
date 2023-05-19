@@ -1,6 +1,7 @@
 package com.rickyslash.composetempconvert
 
 import android.os.Bundle
+import android.service.controls.Control.StatelessBuilder
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Column
@@ -28,10 +29,49 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colors.background
                 ) {
-                    StatefulTempInput()
+                    Column {
+                        StatefulTempInput()
+                        TempConvert()
+                    }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun TempConvert(modifier: Modifier = Modifier) {
+    var input by remember { mutableStateOf("") }
+    var output by remember { mutableStateOf("") }
+    Column(modifier) {
+        StatelessTempInput(
+            input = input,
+            output = output,
+            onValueChange = { newInput ->
+                input = newInput
+                output = celciusToFahrenheit(newInput)
+            })
+    }
+}
+
+@Composable
+fun StatelessTempInput(
+    input: String,
+    output: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier.padding(16.dp)) {
+        Text(
+            text = stringResource(R.string.stateless_converter),
+            style = MaterialTheme.typography.h5)
+        OutlinedTextField(
+            value = input,
+            onValueChange = onValueChange,
+            label = { Text(stringResource(R.string.enter_celsius)) },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+        )
+        Text(stringResource(R.string.temperature_fahrenheit, output))
     }
 }
 
