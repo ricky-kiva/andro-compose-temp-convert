@@ -32,6 +32,7 @@ class MainActivity : ComponentActivity() {
                     Column {
                         StatefulTempInput()
                         TempConvert()
+                        TwoWayTempConvert()
                     }
                 }
             }
@@ -96,6 +97,48 @@ fun StatefulTempInput(modifier: Modifier = Modifier) {
     }
 }
 
+@Composable
+private fun TwoWayTempConvert(modifier: Modifier = Modifier) {
+    var celcius by remember { mutableStateOf("") }
+    var fahrenheit by remember { mutableStateOf("") }
+    Column(modifier.padding(16.dp)) {
+        Text(
+            text = stringResource(R.string.two_way_converter),
+            style = MaterialTheme.typography.h5
+        )
+        GeneralTempInput(
+            scale = Scale.CELCIUS,
+            input = celcius,
+            onValueChange = { newInput ->
+                celcius = newInput
+                fahrenheit = celciusToFahrenheit(newInput)
+            })
+        GeneralTempInput(
+            scale = Scale.FAHRENHEIT,
+            input = fahrenheit,
+            onValueChange = { newInput ->
+                fahrenheit = newInput
+                celcius = fahrenheitToCelcius(newInput)
+            })
+    }
+}
+
+@Composable
+fun GeneralTempInput(
+    scale: Scale,
+    input: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier) {
+        OutlinedTextField(
+            value = input,
+            onValueChange = onValueChange,
+            label = { Text(stringResource(R.string.enter_temperature, scale.scaleName)) },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
 fun DefaultPreview() {
@@ -103,7 +146,13 @@ fun DefaultPreview() {
     }
 }
 
+enum class Scale(val scaleName: String) {
+    CELCIUS("Celcius"),
+    FAHRENHEIT("Fahrenheit")
+}
+
 private fun celciusToFahrenheit(celcius: String) = celcius.toDoubleOrNull()?.let { (it * (9/5)) + 32 }.toString()
+private fun fahrenheitToCelcius(fahrenheit: String) = fahrenheit.toDoubleOrNull()?.let { (it-32) * 5/9 }.toString()
 
 // State is a component that contains value to dynamically affect UI
 // UI Update Loop: 0 -> Event -> Renew State -> Display State -> 0
