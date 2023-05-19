@@ -3,13 +3,20 @@ package com.rickyslash.composetempconvert
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.MaterialTheme
+import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.rickyslash.composetempconvert.ui.theme.ComposeTempConvertTheme
 
 class MainActivity : ComponentActivity() {
@@ -17,12 +24,11 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             ComposeTempConvertTheme {
-                // A surface container using the 'background' color from the theme
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colors.background
                 ) {
-                    Greeting("Android")
+                    StatefulTempInput()
                 }
             }
         }
@@ -30,17 +36,34 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun Greeting(name: String) {
-    Text(text = "Hello $name!")
+fun StatefulTempInput(modifier: Modifier = Modifier) {
+    var input by remember { mutableStateOf("") }
+    var output by remember { mutableStateOf("") }
+    Column(modifier.padding(16.dp)) {
+        Text(
+            text = stringResource(R.string.stateful_converter),
+            style = MaterialTheme.typography.h5)
+        OutlinedTextField(
+            value = input,
+            onValueChange = { newInput ->
+                input = newInput
+                output = celciusToFahrenheit(newInput)
+            },
+            label = { Text(stringResource(R.string.enter_celsius)) },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+        )
+        Text(stringResource(R.string.temperature_fahrenheit, output))
+    }
 }
 
 @Preview(showBackground = true)
 @Composable
 fun DefaultPreview() {
     ComposeTempConvertTheme {
-        Greeting("Android")
     }
 }
+
+private fun celciusToFahrenheit(celcius: String) = celcius.toDoubleOrNull()?.let { (it * (9/5)) + 32 }.toString()
 
 // State is a component that contains value to dynamically affect UI
 // UI Update Loop: 0 -> Event -> Renew State -> Display State -> 0
@@ -90,7 +113,7 @@ fun FormInput() {
 
 // to implement State Hoisting, State variable nee to be changed in 2 parameter:
 // - `value: T` (State's value)
-// - `onEvent: (T) -> Unit` (Lambda that shows occuring Events)
+// - `onEvent: (T) -> Unit` (Lambda that shows occurring Events)
 /* example:
 @Composable
 fun StatefulCounter(modifier: Modifier = Modifier) {
@@ -139,14 +162,14 @@ fun ChildComposable(stateValue: String) {
 /* example:
 @Composable
 fun OuterComposable(stateValue: String, onStateChange: (String) -> Unit) {
-    // OuterComposable may have some other child composables
+    // OuterComposable may have some other child composable
 
     InnerComposable(stateValue, onStateChange)
 }
 
 @Composable
 fun InnerComposable(stateValue: String, onStateChange: (String) -> Unit) {
-    // InnerComposable may have some other child composables
+    // InnerComposable may have some other child composable
 
     Button(onClick = { onStateChange("New Value") }) {
         Text(text = stateValue)
